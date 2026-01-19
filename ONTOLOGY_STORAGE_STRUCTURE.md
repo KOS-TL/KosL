@@ -1,4 +1,11 @@
-# 本体类型在内存中的存储方式
+# 本体类型在内存中的存储方式 / Ontology Type Storage Structure in Memory
+
+[中文](#中文) | [English](#english)
+
+---
+
+<a name="中文"></a>
+## 中文
 
 ## 答案：**动态数组（Dynamic Array）**
 
@@ -264,10 +271,276 @@ void kos_ontology_free(TypeOntology* ontology) {
 
 这种设计在类型数量适中（数百到数千）时非常高效，既保证了内存局部性，又提供了简单的实现。
 
+---
 
+<a name="english"></a>
+## English
 
+# Ontology Type Storage Structure in Memory
 
+## Answer: **Dynamic Array**
 
+Ontology types are stored in memory as a **dynamic array**, not a linked list.
+
+## Data Structure Definition
+
+### TypeOntology Structure
+
+**Location**: `include/kos_ontology.h:24`
+
+```c
+typedef struct {
+    char domain_name[64];              // Domain name, e.g., "manufacturing"
+    TypeDefinition* type_definitions;  // Type definition array (dynamic array pointer)
+    size_t type_count;                 // Number of type definitions (current element count)
+    size_t capacity;                   // Array capacity (allocated memory size)
+} TypeOntology;
+```
+
+**Key Fields**:
+- `type_definitions`: Pointer to `TypeDefinition` array
+- `type_count`: Current number of stored type definitions
+- `capacity`: Array capacity (number of elements that allocated memory can hold)
+
+### TypeDefinition Structure
+
+```c
+typedef struct {
+    char* name;              // Type name (e.g., "BatchID", "FailEvt")
+    kos_term* type_def;      // Type definition (kos_term*), constructed through type constructors
+    kos_term* ctx;           // Type definition context (optional, for dependent types)
+} TypeDefinition;
+```
+
+## Memory Layout
+
+```
+TypeOntology (on heap)
+├── domain_name[64]          (64 bytes, fixed size)
+├── type_definitions* ──────┐
+├── type_count = 217        │
+└── capacity = 256           │
+                             │
+                             ↓
+                    ┌────────────────────────────┐
+                    │ TypeDefinition[0]          │ (contiguous memory on heap)
+                    │ ├─ name* → "BatchID"      │
+                    │ ├─ type_def* → kos_term*  │
+                    │ └─ ctx* = NULL            │
+                    ├─ TypeDefinition[1]        │
+                    │ ├─ name* → "Machine"      │
+                    │ ├─ type_def* → kos_term*  │
+                    │ └─ ctx* = NULL            │
+                    ├─ ...                      │
+                    ├─ TypeDefinition[216]      │
+                    └─ TypeDefinition[217-255]  │ (unused, reserved space)
+```
+
+## Dynamic Array Implementation Mechanism
+
+### 1. Initialization
+
+**Location**: `src/core/ontology_manager.c:162`
+
+```c
+TypeOntology* kos_ontology_create(const char* domain_name) {
+    // ...
+    ontology->type_definitions = NULL;  // Initially empty
+    ontology->type_count = 0;            // Initial count is 0
+    ontology->capacity = 0;              // Initial capacity is 0
+    // ...
+}
+```
+
+### 2. Dynamic Expansion (Capacity Increase)
+
+**Location**: `src/core/ontology_manager.c:213`
+
+```c
+#define INITIAL_CAPACITY 16  // Initial capacity
+
+static int expand_capacity(TypeOntology* ontology) {
+    // Calculate new capacity: initial 16, then double each time
+    size_t new_capacity = ontology->capacity == 0 
+        ? INITIAL_CAPACITY 
+        : ontology->capacity * 2;
+    
+    // Use realloc to expand array
+    TypeDefinition* new_array = (TypeDefinition*)realloc(
+        ontology->type_definitions, 
+        new_capacity * sizeof(TypeDefinition));
+    
+    if (!new_array) {
+        return -1;
+    }
+    
+    ontology->type_definitions = new_array;
+    ontology->capacity = new_capacity;
+    
+    return 0;
+}
+```
+
+**Expansion Strategy**:
+- Initial capacity: 16
+- Expansion rule: When capacity is insufficient, double the capacity (16 → 32 → 64 → 128 → 256 → ...)
+- Expansion method: Use `realloc()` to reallocate a larger contiguous memory block
+
+### 3. Adding Elements
+
+**Location**: `src/core/ontology_manager.c:233`
+
+```c
+int kos_ontology_add_type_definition(...) {
+    // Check capacity, expand if necessary
+    if (ontology->type_count >= ontology->capacity) {
+        if (expand_capacity(ontology) != 0) {
+            return -1;
+        }
+    }
+    
+    // Direct access through array index
+    TypeDefinition* new_def = &ontology->type_definitions[ontology->type_count];
+    
+    // Set new element data
+    // ...
+    
+    ontology->type_count++;  // Increment count
+    return 0;
+}
+```
+
+### 4. Accessing Elements
+
+**Location**: `src/core/ontology_manager.c:291`
+
+```c
+TypeDefinition* kos_ontology_get_type_definition_info(TypeOntology* ontology, const char* name) {
+    // Linear search (O(n))
+    for (size_t i = 0; i < ontology->type_count; i++) {
+        if (strcmp(ontology->type_definitions[i].name, name) == 0) {
+            return &ontology->type_definitions[i];  // Array index access
+        }
+    }
+    return NULL;
+}
+```
+
+### 5. Traversing All Elements
+
+**Location**: `src/core/ontology_manager.c:187`
+
+```c
+void kos_ontology_free(TypeOntology* ontology) {
+    if (ontology->type_definitions) {
+        // Use for loop to traverse array
+        for (size_t i = 0; i < ontology->type_count; i++) {
+            TypeDefinition* def = &ontology->type_definitions[i];
+            // Free resources for each element
+            // ...
+        }
+        free(ontology->type_definitions);  // Free entire array
+    }
+}
+```
+
+## Why Use Array Instead of Linked List?
+
+### Advantages of Arrays
+
+1. **Memory Locality**:
+   - Array elements are stored contiguously in memory
+   - CPU cache-friendly, fast access
+   - Suitable for sequential access and batch operations
+
+2. **Random Access**:
+   - O(1) time complexity to access any element by index
+   - Suitable for scenarios requiring index-based access
+
+3. **Memory Efficiency**:
+   - Each element only needs to store data, no additional pointers needed
+   - Linked list nodes require additional `next` pointer (8 bytes)
+
+4. **Simple Implementation**:
+   - Use `realloc` to expand
+   - No need to manage links between nodes
+
+### Disadvantages of Arrays
+
+1. **Search Efficiency**:
+   - Current implementation uses linear search (O(n))
+   - If type count is very large (thousands), search may be slow
+
+2. **Insertion/Deletion**:
+   - Deleting elements requires moving subsequent elements (O(n))
+   - But type definitions usually don't need frequent deletion
+
+### Future Optimization Suggestions
+
+If type count is very large (thousands), consider:
+
+1. **Hash Table Index**:
+   ```c
+   typedef struct {
+       // ... existing fields ...
+       HashTable* name_index;  // Hash table from name to index
+   } TypeOntology;
+   ```
+   - Search time complexity: O(1) (average case)
+   - Space overhead: additional hash table
+
+2. **Sorted Array + Binary Search**:
+   - Keep array sorted by name
+   - Search time complexity: O(log n)
+   - Insertion time complexity: O(n) (need to move elements)
+
+3. **Hybrid Structure**:
+   - Array stores data (maintains memory locality)
+   - Hash table or B-tree provides fast search index
+
+## Memory Usage Example
+
+Assuming 217 type definitions:
+
+```
+Initial state:
+  capacity = 0
+  type_count = 0
+  type_definitions = NULL
+
+After adding 1st type:
+  capacity = 16 (initial capacity)
+  type_count = 1
+  type_definitions → [TypeDefinition[0], ..., TypeDefinition[15]]
+
+After adding 16th type:
+  capacity = 32 (expansion: 16 * 2)
+  type_count = 16
+  type_definitions → [TypeDefinition[0], ..., TypeDefinition[31]]
+
+After adding 32nd type:
+  capacity = 64 (expansion: 32 * 2)
+  type_count = 32
+  type_definitions → [TypeDefinition[0], ..., TypeDefinition[63]]
+
+...
+
+After adding 217th type:
+  capacity = 256 (expansion: 128 * 2)
+  type_count = 217
+  type_definitions → [TypeDefinition[0], ..., TypeDefinition[255]]
+  (where TypeDefinition[217-255] are unused)
+```
+
+## Summary
+
+- **Storage Method**: **Dynamic Array**
+- **Memory Layout**: Contiguous memory block, elements stored sequentially
+- **Expansion Strategy**: Double capacity when insufficient (16 → 32 → 64 → ...)
+- **Access Method**: Access through array index `type_definitions[i]`
+- **Search Method**: Currently uses linear search (O(n)), can be optimized to hash table or sorted array
+
+This design is very efficient when type count is moderate (hundreds to thousands), ensuring memory locality while providing simple implementation.
 
 
 
