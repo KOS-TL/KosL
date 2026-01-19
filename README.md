@@ -1,5 +1,12 @@
 # KOS-TL (Knowledge Operation System - Type Logic)
 
+[中文](#中文) | [English](#english)
+
+---
+
+<a name="中文"></a>
+## 中文
+
 基于《KOS-TL (Knowledge Operation System Type Logic)》设计原则开发的"知行合一"逻辑框架系统。
 
 ## 系统架构
@@ -123,4 +130,133 @@ kos_serialized_free(json);
 ## 许可证
 
 [待添加]
+
+---
+
+<a name="english"></a>
+## English
+
+A "Unity of Knowledge and Action" logical framework system developed based on the design principles of "KOS-TL (Knowledge Operation System - Type Logic)".
+
+## System Architecture
+
+The system is strictly divided into three logical layers, ensuring a balance between logical rigor and engineering efficiency:
+
+| Layer | Name | Core Responsibility | Technical Implementation Focus |
+| --- | --- | --- | --- |
+| **L0: Core** | **Static Truth Layer** | Defines "what is legal". Establishes type constraints based on Intuitionistic Restricted Type Theory (ITT) | Dependent type checker (Bidirectional Type Checking), proof term construction |
+| **L1: Kernel** | **Dynamic Migration Layer** | Defines "how to change". Handles event-driven state evolution through small-step operational semantics | Deterministic state machine, event queue management, causal backtracking |
+| **L2: Runtime** | **Environment Evolution Layer** | Defines "how to run". Handles external I/O, physical storage mapping, and signal refinement | Signal refinement operator (elab), physical storage manager (M) |
+
+## Core Features
+
+- **Knowledge Object Atomization (Σ-Types)**: All knowledge entering the system must exist in the form of `<d, p>`, i.e., strongly coupling data `d` with its business logic proof `p`, eliminating "rootless data"
+- **Deterministic Evolution (Small-step Semantics)**: System state transitions must be driven by verified events, and non-deterministic choices are strictly prohibited
+- **Computational Reflection and Endogenous Auditing (Reflexivity)**: The system must automatically synthesize equivalence proofs (Identity Proof) during each logical evolution, enabling real-time formal auditing at runtime
+- **Asynchronous Refinement and Sequential Commit**: Physical signals can be refined in parallel, but the kernel must commit sequentially to ensure the uniqueness of the causal chain
+
+## Key Operators
+
+- **elab (Refinement Operator)**: Maps raw physical bitstreams to event objects with logical proofs `<e, p>`
+- **STEP (Migration Operator)**: Drives monotonic evolution of the system from old state `σ` to new state `σ'`
+- **M (Concretization Operator)**: Sinks abstract logical conclusions into physical actions (such as database ACID transactions or hardware voltage control)
+
+## Build Instructions
+
+### Building with CMake
+
+```bash
+# Create build directory
+mkdir build
+cd build
+
+# Configure (using MinGW)
+cmake -G "MinGW Makefiles" ..
+
+# Or using Visual Studio
+cmake ..
+
+# Build
+cmake --build .
+
+# Run
+./bin/kos_system.exe
+```
+
+## Project Structure
+
+```
+KosL/
+├── include/          # Header files
+│   ├── kos_core.h    # L0 Core layer interface
+│   ├── kos_kernel.h  # L1 Kernel layer interface
+│   └── kos_runtime.h # L2 Runtime layer interface
+├── src/
+│   ├── core/         # L0 Core implementation
+│   │   ├── type_checker.c    # Type checking
+│   │   ├── reduction.c       # Reduction operations
+│   │   ├── business_logic.c  # Business logic
+│   │   ├── type_builder.c    # Type builder
+│   │   └── storage.c         # Storage and loading
+│   ├── kernel/       # L1 Kernel implementation
+│   └── runtime/      # L2 Runtime implementation
+├── examples/         # Example code
+│   └── test_storage.c # Storage tool demo
+├── main.c            # Main program entry
+├── CMakeLists.txt    # CMake build configuration
+└── README.md         # Project documentation
+```
+
+## Core Layer Tools
+
+The system provides complete Core layer tools for basic type construction, storage, and loading:
+
+### Type Builder
+
+- `kos_mk_atomic()` - Create atomic value type
+- `kos_mk_prop()` - Create proposition type
+- `kos_mk_val()` - Create value type
+- `kos_mk_pair()` - Create Σ-Type pair `<d, p>`
+- `kos_mk_sigma()` - Create dependent type `Σ(x:A).B`
+- `kos_term_copy()` - Deep copy term
+- `kos_term_free()` - Recursively free term
+
+### Storage and Loading
+
+- `kos_term_serialize()` - Serialize term to JSON format
+- `kos_term_deserialize()` - Deserialize term from JSON
+- `kos_term_save_to_file()` - Save term to file
+- `kos_term_load_from_file()` - Load term from file
+- `kos_knowledge_save()` - Save knowledge set K to file
+- `kos_knowledge_load()` - Load knowledge set K from file
+
+### Usage Example
+
+```c
+// Create types
+kos_term* val = kos_mk_val("hello");
+kos_term* prop = kos_mk_prop("IsVerified(alice)");
+kos_term* pair = kos_mk_pair(val, prop);
+
+// Serialize
+kos_serialized* json = kos_term_serialize(pair);
+
+// Save to file
+kos_term_save_to_file(pair, "knowledge.json");
+
+// Load from file
+kos_term* loaded = kos_term_load_from_file("knowledge.json");
+
+// Cleanup
+kos_term_free(pair);
+kos_serialized_free(json);
+```
+
+## Design Principles
+
+This architecture ensures that "any bit flip in physical storage has complete ontological proof chain support at the logical layer."
+
+## License
+
+[To be added]
 
