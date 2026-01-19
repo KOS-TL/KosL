@@ -1,4 +1,11 @@
-# 类型依存关系可视化功能总结
+# 类型依存关系可视化功能总结 / Type Dependency Visualization Feature Summary
+
+[中文](#中文) | [English](#english)
+
+---
+
+<a name="中文"></a>
+## 中文
 
 ## 完成的功能
 
@@ -173,10 +180,185 @@ dot -Tsvg output.dot -o output.svg
 
 类型依存关系可视化功能已成功实现，可以清晰地展示类型系统结构中类型之间的依存关系。工具支持多种输出格式，满足不同的使用场景。虽然JSON加载功能尚未完成，但通过测试程序已经可以验证可视化功能的正确性。
 
+---
 
+<a name="english"></a>
+## English
 
+# Type Dependency Visualization Feature Summary
 
+## Completed Features
 
+✅ **Type Dependency Extraction**
+- Extract type dependencies from `TypeOntology`
+- Support for Σ types (dependent sum types), Π types (dependent product types), Sum types (union types)
+- Recursively traverse type structures to extract all type references
+
+✅ **Multiple Output Formats**
+1. **GraphViz DOT Format** (`output.dot`)
+   - Can be used to generate PNG/SVG/PDF images
+   - Use different colors to identify different type constructors
+   - Green: Σ types (event types)
+   - Yellow: Π types (predicate types)
+   - Gray: Basic types (ID, TIME)
+
+2. **HTML Visualization** (`output.html`)
+   - Interactive rendering using Mermaid.js
+   - Can be viewed directly in web browsers
+   - Support zoom and interaction
+
+3. **Text Tree Diagram** (`output.txt`)
+   - Console-friendly text output
+   - Clearly displays type hierarchy
+
+4. **JSON Format** (`output_dependencies.json`)
+   - Machine-readable dependency data
+   - Can be used for further processing and analysis
+
+✅ **Tool Programs**
+- `test_visualization.exe`: Test program that initializes ontology from program and generates visualization
+- `visualize_ontology.exe`: Command-line tool that generates visualization from JSON file (requires JSON deserialization implementation)
+
+## Implementation Details
+
+### Core Files
+
+1. **`include/kos_visualization.h`**
+   - Defines visualization API interface
+   - Defines dependency graph data structures
+
+2. **`src/core/visualization.c`**
+   - Implements dependency extraction logic
+   - Implements output generation for various formats
+
+3. **`tools/test_visualization.c`**
+   - Test program demonstrating visualization feature usage
+
+4. **`tools/visualize_ontology.c`**
+   - Command-line tool (requires JSON deserialization support)
+
+### Data Structures
+
+```c
+// Type reference information
+typedef struct {
+    char* type_name;           // Referenced type name
+    char* reference_kind;      // Reference method
+    int depth;                 // Depth in type tree
+} TypeReference;
+
+// Type dependency node
+typedef struct {
+    char* type_name;              // Type name
+    TypeReference* dependencies;  // List of dependent types
+    size_t dependency_count;      // Number of dependencies
+    char* type_kind;              // Type kind: "ID", "TIME", "PROP", "SIGMA", "PI", "SUM"
+} TypeDependencyNode;
+
+// Type dependency graph
+typedef struct {
+    TypeDependencyNode* nodes;    // Node array
+    size_t node_count;            // Number of nodes
+    size_t capacity;              // Array capacity
+} TypeDependencyGraph;
+```
+
+## Usage Examples
+
+### Running Test Program
+
+```bash
+cd build/bin/Release
+./test_visualization.exe
+```
+
+Output example:
+```
+=== Testing Type Dependency Visualization ===
+
+1. Initializing ontology...
+   ✓ Ontology initialized (11 types)
+
+2. Extracting type dependencies...
+   ✓ Dependencies extracted (11 nodes)
+
+3. Text tree visualization:
+   =========================
+Type Dependency Graph
+====================
+
+FailEvt (SIGMA)
+  └─> BatchID
+  └─> ErrorCode
+  └─> Time
+
+ProcStep (SIGMA)
+  └─> BatchID
+  └─> Machine
+
+Anomaly (SIGMA)
+  └─> Machine
+  └─> Param
+  └─> ParamValue
+  └─> Time
+
+InRoute (PI)
+  └─> BatchID
+  └─> Machine
+
+Overlap (PI)
+  └─> Time
+
+4. Generating visualization files...
+   ✓ GraphViz DOT: output.dot
+   ✓ HTML (Mermaid): output.html
+   ✓ JSON dependencies: output_dependencies.json
+```
+
+### Generating GraphViz Images
+
+```bash
+# Requires GraphViz installation
+dot -Tpng output.dot -o output.png
+dot -Tsvg output.dot -o output.svg
+```
+
+### Viewing HTML Visualization
+
+Simply open the `output.html` file in a web browser to view the interactive graph.
+
+## Current Limitations
+
+1. **JSON Deserialization Not Implemented**: The `kos_ontology_deserialize` function currently returns NULL, so the `visualize_ontology` tool cannot load ontology from JSON files yet. The test program uses program-initialized ontology.
+
+2. **Self-Reference Display**: Basic types (ID, TIME, PROP) are displayed as self-references in visualization (e.g., BatchID -> BatchID). This is the current implementation behavior, as these basic types are indeed defined through themselves.
+
+3. **Dependency Deduplication**: Current implementation extracts all type references, including duplicates. Future versions can add deduplication and reference counting features.
+
+## Visualization Effects
+
+From the generated output, we can see:
+
+- **FailEvt** (Σ type) depends on: BatchID, ErrorCode, Time
+- **ProcStep** (Σ type) depends on: BatchID, Machine
+- **Anomaly** (Σ type) depends on: Machine, Param, ParamValue, Time
+- **InRoute** (Π type) depends on: BatchID, Machine
+- **Overlap** (Π type) depends on: Time
+
+These dependencies clearly show the structure of the type system and the hierarchical relationships between types.
+
+## Future Improvement Directions
+
+1. Implement complete JSON deserialization to enable `visualize_ontology` tool to load ontology from JSON files
+2. Optimize self-reference display for basic types (can choose to hide or mark as "basic type")
+3. Add dependency deduplication and reference counting features
+4. Support filtering and search functionality (e.g., only show dependencies for specific types)
+5. Add interactive graph editing functionality
+6. Support export to other formats (SVG, PDF, etc.)
+
+## Summary
+
+The type dependency visualization feature has been successfully implemented, clearly displaying the dependencies between types in the type system structure. The tool supports multiple output formats to meet different usage scenarios. Although JSON loading functionality is not yet complete, the test program can verify the correctness of the visualization feature.
 
 
 
