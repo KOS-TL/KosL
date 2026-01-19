@@ -1,4 +1,11 @@
-# KOS-TL 编译器
+# KOS-TL 编译器 / KOS-TL Compiler
+
+[中文](#中文) | [English](#english)
+
+---
+
+<a name="中文"></a>
+## 中文
 
 KOS-TL 语言的编译器实现，将 KOS-TL 源代码编译为 C 代码。
 
@@ -82,9 +89,94 @@ cmake --build .
   - [x] 完整编译流程集成
   - [x] 错误处理和报告
 
+---
 
+<a name="english"></a>
+## English
 
+# KOS-TL Compiler
 
+Compiler implementation for the KOS-TL language, compiling KOS-TL source code to C code.
+
+## Project Structure
+
+```
+compiler/
+├── src/
+│   ├── compiler/        # Compiler core modules
+│   │   ├── lexer.c      # Lexer
+│   │   ├── parser.c     # Parser
+│   │   ├── type_checker.c  # Type checker
+│   │   ├── codegen.c    # Code generator
+│   │   └── ast.c        # AST operations
+│   └── main.c           # Compiler main program
+├── include/
+│   └── compiler.h       # Compiler public interface
+├── examples/            # Example KOS-TL code
+├── tests/               # Test cases
+└── CMakeLists.txt       # Build configuration
+```
+
+## Build
+
+```bash
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
+
+## Usage
+
+### Basic Usage
+
+```bash
+# Compile KOS-TL file to C code
+./kos-tl-compiler example.kos -o example.c
+
+# Type checking only (no code generation)
+./kos-tl-compiler example.kos -t
+
+# Output to stdout
+./kos-tl-compiler example.kos
+```
+
+### Command Line Options
+
+- `-o <file>`: Specify output file (default: stdout)
+- `-t`: Type checking only, no code generation
+- `-h, --help`: Show help information
+- `-v, --version`: Show version information
+
+### Compilation Pipeline
+
+1. **Lexical Analysis**: Convert source code to token stream
+2. **Syntax Analysis**: Build abstract syntax tree (AST)
+3. **Type Checking**: Verify type correctness
+4. **Code Generation**: Convert AST to C code
+
+## Development Status
+
+- [x] Lexer ✅
+- [x] Parser ✅
+- [x] Type Checker ✅ (core functionality implemented)
+  - [x] Type environment management
+  - [x] Bidirectional type checking (check mode and infer mode)
+  - [x] Type inference
+  - [x] Universe level checking
+  - [x] AST to kos_term conversion
+  - [x] Type equality and compatibility checking
+- [x] Code Generator ✅ (basic implementation completed)
+  - [x] AST to C code conversion framework
+  - [x] Expression code generation
+  - [x] Function definition generation
+  - [x] Type declaration generation
+  - [x] Module code generation
+- [x] Compiler Main Program Integration ✅
+  - [x] Command line argument parsing
+  - [x] File I/O handling
+  - [x] Complete compilation pipeline integration
+  - [x] Error handling and reporting
 
 
 
